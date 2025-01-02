@@ -134,6 +134,8 @@ class Server {
             $authBackend = new \Baikal\Core\PDOBasicAuth($this->pdo, $this->authRealm);
         } elseif ($this->authType === 'Apache') {
             $authBackend = new \Sabre\DAV\Auth\Backend\Apache();
+        } elseif ($this->authType === 'IMAP') {
+            $authBackend = new \Sabre\DAV\Auth\Backend\IMAP('{' . $config['system']["imap_connection"] . '}', $GLOBALS["DB"]->getPDO(), 60);
         } else {
             $authBackend = new \Sabre\DAV\Auth\Backend\PDO($this->pdo);
             $authBackend->setRealm($this->authRealm);

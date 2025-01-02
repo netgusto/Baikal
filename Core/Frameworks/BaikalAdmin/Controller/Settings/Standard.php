@@ -27,6 +27,8 @@
 
 namespace BaikalAdmin\Controller\Settings;
 
+use Symfony\Component\Yaml\Yaml;
+
 class Standard extends \Flake\Core\Controller {
     /**
      * @var \Baikal\Model\Config\Standard
@@ -48,6 +50,7 @@ class Standard extends \Flake\Core\Controller {
 
         $this->oForm = $this->oModel->formForThisModelInstance([
             "close" => false,
+            "hook.morphology"   => [$this, "morphologyHook"],
         ]);
 
         if ($this->oForm->submitted()) {
@@ -60,5 +63,22 @@ class Standard extends \Flake\Core\Controller {
         $oView->setData("form", $this->oForm->render());
 
         return $oView->render();
+    }
+
+    function morphologyHook(\Formal\Form $oForm, \Formal\Form\Morphology $oMorpho) {
+        if ($oForm->submitted()) {
+            $bAuthtype = $oForm->postValue("dav_auth_type");
+        } else {
+            try {
+                $config = Yaml::parseFile(PROJECT_PATH_CONFIG . "baikal.yaml");
+            } catch (\Exception $e) {
+                error_log('Error reading baikal.yaml file : ' . $e->getMessage());
+            }
+            $bAuthtype = $config['system']['dav_auth_type'] ?? true;
+        }
+
+        if ($bAuthtype == "Digest" || $bAuthtype == "Basic" || $bAuthtype == "Apache") {
+            $oMorpho->remove("imap_connection");
+        }
     }
 }

@@ -43,6 +43,7 @@ class Standard extends \Baikal\Model\Config {
         // could be set to different value when migrating from legacy config
         "auth_realm"            => "BaikalDAV",
         "base_uri"              => "",
+        "imap_connection"       => "localhost:993/imap/ssl/novalidate-cert",
     ];
 
     function __construct() {
@@ -79,7 +80,14 @@ class Standard extends \Baikal\Model\Config {
         $oMorpho->add(new \Formal\Element\Listbox([
             "prop"    => "dav_auth_type",
             "label"   => "WebDAV authentication type",
-            "options" => ["Digest", "Basic", "Apache"],
+            "options" => ["Digest", "Basic", "Apache", "IMAP"],
+            "refreshonchange" => true,
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"  => "imap_connection",
+            "label" => "IMAP auth connection string",
+            "help"  => "For production, use your real IMAP servername with TLS (SSL[993] or StartTLS(143)), eg.: imap.server.com:993/imap/ssl",
         ]));
 
         $oMorpho->add(new \Formal\Element\Password([
