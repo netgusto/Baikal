@@ -27,6 +27,7 @@
 
 namespace Baikal\Core;
 
+use Baikal\Model\Structs\LDAPConfig;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -134,6 +135,8 @@ class Server {
             $authBackend = new \Baikal\Core\PDOBasicAuth($this->pdo, $this->authRealm);
         } elseif ($this->authType === 'Apache') {
             $authBackend = new \Sabre\DAV\Auth\Backend\Apache();
+        } elseif ($this->authType === 'LDAP') {
+            $authBackend = new \Baikal\Core\LDAP($this->pdo, 'users', LDAPConfig::fromArray($config['system']));
         } else {
             $authBackend = new \Sabre\DAV\Auth\Backend\PDO($this->pdo);
             $authBackend->setRealm($this->authRealm);

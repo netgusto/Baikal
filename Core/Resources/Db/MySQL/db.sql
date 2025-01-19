@@ -140,6 +140,7 @@ CREATE TABLE propertystorage (
 CREATE UNIQUE INDEX path_property ON propertystorage (path(600), name(100));
 CREATE TABLE users (
     id INTEGER UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    federation VARCHAR(20),
     username VARBINARY(50),
     digesta1 VARBINARY(32),
     UNIQUE(username)

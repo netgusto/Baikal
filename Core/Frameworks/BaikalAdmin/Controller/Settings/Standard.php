@@ -27,6 +27,8 @@
 
 namespace BaikalAdmin\Controller\Settings;
 
+use Symfony\Component\Yaml\Yaml;
+
 class Standard extends \Flake\Core\Controller {
     /**
      * @var \Baikal\Model\Config\Standard
@@ -48,6 +50,7 @@ class Standard extends \Flake\Core\Controller {
 
         $this->oForm = $this->oModel->formForThisModelInstance([
             "close" => false,
+            "hook.morphology" => [$this, "morphologyHook"],
         ]);
 
         if ($this->oForm->submitted()) {
@@ -60,5 +63,56 @@ class Standard extends \Flake\Core\Controller {
         $oView->setData("form", $this->oForm->render());
 
         return $oView->render();
+    }
+
+    function morphologyHook(\Formal\Form $oForm, \Formal\Form\Morphology $oMorpho) {
+        if ($oForm->submitted()) {
+            $bLDAP = (strval($oForm->postValue("dav_auth_type")) === "LDAP");
+            $sLDAPm = strval($oForm->postValue("ldap_mode"));
+        } else {
+            try {
+                $config = Yaml::parseFile(PROJECT_PATH_CONFIG . "baikal.yaml");
+            } catch (\Exception $e) {
+                error_log('Error reading baikal.yaml file : ' . $e->getMessage());
+            }
+            $bLDAP = isset($config['system']['dav_auth_type']) ? ($config['system']['dav_auth_type'] === 'LDAP') : false;
+            $sLDAPm = $config['system']['ldap_mode'] ?? 'DN';
+        }
+
+        if ($bLDAP) {
+            if ($sLDAPm === "DN") {
+                $oMorpho->remove("ldap_bind_dn");
+                $oMorpho->remove("ldap_bind_password");
+                $oMorpho->remove("ldap_search_base");
+                $oMorpho->remove("ldap_search_attribute");
+                $oMorpho->remove("ldap_search_filter");
+                $oMorpho->remove("ldap_group");
+            } elseif ($sLDAPm === "Attribute") {
+                $oMorpho->remove("ldap_dn");
+                $oMorpho->remove("ldap_search_filter");
+                $oMorpho->remove("ldap_group");
+            } elseif ($sLDAPm === "Filter") {
+                $oMorpho->remove("ldap_dn");
+                $oMorpho->remove("ldap_search_attribute");
+                $oMorpho->remove("ldap_group");
+            } elseif ($sLDAPm === "Group") {
+                $oMorpho->remove("ldap_dn");
+                $oMorpho->remove("ldap_search_filter");
+            } else {
+                error_log('Unknown LDAP mode: ' . $sLDAPm);
+            }
+        } else {
+            $oMorpho->remove("ldap_uri");
+            $oMorpho->remove("ldap_mode");
+            $oMorpho->remove("ldap_bind_dn");
+            $oMorpho->remove("ldap_bind_password");
+            $oMorpho->remove("ldap_dn");
+            $oMorpho->remove("ldap_cn");
+            $oMorpho->remove("ldap_mail");
+            $oMorpho->remove("ldap_search_base");
+            $oMorpho->remove("ldap_search_attribute");
+            $oMorpho->remove("ldap_search_filter");
+            $oMorpho->remove("ldap_group");
+        }
     }
 }

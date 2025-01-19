@@ -32,17 +32,28 @@ use Symfony\Component\Yaml\Yaml;
 class Standard extends \Baikal\Model\Config {
     # Default values
     protected $aData = [
-        "configured_version"    => BAIKAL_VERSION,
-        "timezone"              => "Europe/Paris",
-        "card_enabled"          => true,
-        "cal_enabled"           => true,
-        "dav_auth_type"         => "Digest",
-        "admin_passwordhash"    => "",
-        "failed_access_message" => "user %u authentication failure for Baikal",
+        "configured_version"     => BAIKAL_VERSION,
+        "timezone"               => "Europe/Paris",
+        "card_enabled"           => true,
+        "cal_enabled"            => true,
+        "admin_passwordhash"     => "",
+        "dav_auth_type"          => "Digest",
+        "ldap_mode"              => "None",
+        "ldap_uri"               => "ldap://127.0.0.1",
+        "ldap_bind_dn"           => "cn=baikal,ou=apps,dc=example,dc=com",
+        "ldap_bind_password"     => "",
+        "ldap_dn"                => "mail=%u",
+        "ldap_cn"                => "cn",
+        "ldap_mail"              => "mail",
+        "ldap_search_base"       => "ou=users,dc=example,dc=com",
+        "ldap_search_attribute"  => "uid=%U",
+        "ldap_search_filter"     => "(objectClass=*)",
+        "ldap_group"             => "cn=baikal,ou=groups,dc=example,dc=com",
+        "failed_access_message"  => "user %u authentication failure for Baikal",
         // While not editable as will change admin & any existing user passwords,
         // could be set to different value when migrating from legacy config
-        "auth_realm"            => "BaikalDAV",
-        "base_uri"              => "",
+        "auth_realm"             => "BaikalDAV",
+        "base_uri"               => "",
     ];
 
     function __construct() {
@@ -76,12 +87,6 @@ class Standard extends \Baikal\Model\Config {
             "help"  => "Leave empty to disable sending invite emails",
         ]));
 
-        $oMorpho->add(new \Formal\Element\Listbox([
-            "prop"    => "dav_auth_type",
-            "label"   => "WebDAV authentication type",
-            "options" => ["Digest", "Basic", "Apache"],
-        ]));
-
         $oMorpho->add(new \Formal\Element\Password([
             "prop"  => "admin_passwordhash",
             "label" => "Admin password",
@@ -91,6 +96,72 @@ class Standard extends \Baikal\Model\Config {
             "prop"       => "admin_passwordhash_confirm",
             "label"      => "Admin password, confirmation",
             "validation" => "sameas:admin_passwordhash",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Listbox([
+            "prop"    => "dav_auth_type",
+            "label"   => "WebDAV authentication type",
+            "options" => ["Digest", "Basic", "Apache", "LDAP"],
+            "refreshonchange" => true,
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Listbox([
+            "prop"    => "ldap_mode",
+            "label"   => "LDAP authentication mode",
+            "options" => ["DN", "Attribute", "Filter", "Group"],
+            "refreshonchange" => true,
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_uri",
+            "label"   => "URI of the LDAP server",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_bind_dn",
+            "label"   => "DN which Baikal will use to bind to the LDAP server",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Password([
+            "prop"    => "ldap_bind_password",
+            "label"   => "Password of the bind DN user",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_dn",
+            "label"   => "User DN for bind",
+            "help"    => "Replacments: %u => username, %U => user part, %d => domain part of username, %1-9 parts of the domain in reverse order",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_cn",
+            "label"   => "LDAP-attribute for displayname",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_mail",
+            "label"   => "LDAP-attribute for email",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_search_base",
+            "label"   => "Base of the LDAP search",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_search_attribute",
+            "label"   => "Attribute to match the user with",
+            "help"    => "Replacments: %u => username, %U => user part, %d => domain part of username, %1-9 parts of the domain in reverse order",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_search_filter",
+            "label"   => "LDAP filter to be applied to the search",
+        ]));
+
+        $oMorpho->add(new \Formal\Element\Text([
+            "prop"    => "ldap_group",
+            "label"   => "Group DN that contains the member atribute of the user",
         ]));
 
         try {
@@ -106,6 +177,7 @@ class Standard extends \Baikal\Model\Config {
             $sNotice = "-- Leave empty to keep current password --";
             $oMorpho->element("admin_passwordhash")->setOption("placeholder", $sNotice);
             $oMorpho->element("admin_passwordhash_confirm")->setOption("placeholder", $sNotice);
+            $oMorpho->element("ldap_bind_password")->setOption("placeholder", "-- Not Shown --");
         }
 
         return $oMorpho;
@@ -129,11 +201,19 @@ class Standard extends \Baikal\Model\Config {
             return $this;
         }
 
+        if ($sProp === "ldap_bind_password" && $sValue === "") {
+            return;
+        }
+
+        if (!isset($sValue)) {
+            return;
+        }
+
         parent::set($sProp, $sValue);
     }
 
     function get($sProp) {
-        if ($sProp === "admin_passwordhash" || $sProp === "admin_passwordhash_confirm") {
+        if ($sProp === "admin_passwordhash" || $sProp === "admin_passwordhash_confirm" || $sProp === "ldap_bind_password") {
             return "";
         }
 

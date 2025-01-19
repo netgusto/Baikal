@@ -141,6 +141,7 @@ CREATE TABLE propertystorage (
 CREATE UNIQUE INDEX path_property ON propertystorage (path, name);
 CREATE TABLE users (
 	id integer primary key asc NOT NULL,
+    federation TEXT,
 	username TEXT NOT NULL,
 	digesta1 TEXT NOT NULL,
 	UNIQUE(username)

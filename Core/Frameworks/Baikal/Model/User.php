@@ -35,6 +35,7 @@ class User extends \Flake\Core\Model\Db {
     const LABELFIELD = "username";
 
     protected $aData = [
+        "federation" => null,
         "username" => "",
         "digesta1" => "",
     ];
@@ -45,10 +46,23 @@ class User extends \Flake\Core\Model\Db {
         parent::initByPrimary($sPrimary);
 
         # Initializing principals
-        $this->oIdentityPrincipal = \Baikal\Model\Principal::getBaseRequester()
+        $dbPrincipal = \Baikal\Model\Principal\DBPrincipal::getBaseRequester()
             ->addClauseEquals("uri", "principals/" . $this->get("username"))
             ->execute()
             ->first();
+
+        switch (parent::get("federation")) {
+            case null:
+                $this->oIdentityPrincipal = $dbPrincipal;
+                break;
+
+            case "LDAP":
+                $this->oIdentityPrincipal = \Baikal\Model\Principal\LDAP::fromPrincipal($dbPrincipal, $this->get("username"));
+                break;
+
+            default:
+                throw new \Exception("Unknown user federation");
+        }
     }
 
     function getAddressBooksBaseRequester() {
@@ -75,7 +89,7 @@ class User extends \Flake\Core\Model\Db {
         parent::initFloating();
 
         # Initializing principals
-        $this->oIdentityPrincipal = new \Baikal\Model\Principal();
+        $this->oIdentityPrincipal = new \Baikal\Model\Principal\DBPrincipal();
     }
 
     function get($sPropName) {
@@ -286,5 +300,9 @@ class User extends \Flake\Core\Model\Db {
         }
 
         return md5($this->get("username") . ':' . $config['system']['auth_realm'] . ':' . $sPassword);
+    }
+
+    function isEditable() {
+        return $this->oIdentityPrincipal::class::EDITABLE;
     }
 }

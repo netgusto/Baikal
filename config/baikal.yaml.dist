@@ -9,6 +9,17 @@ system:
     failed_access_message: 'user %u authentication failure for Baikal'
     auth_realm: BaikalDAV
     base_uri: ''
+    ldap_mode: 'None'
+    ldap_uri: 'ldap://127.0.0.1'
+    ldap_bind_dn: 'cn=baikal,ou=apps,dc=example,dc=com'
+    ldap_bind_password: ''
+    ldap_dn: 'mail=%u'
+    ldap_cn: 'cn'
+    ldap_mail: 'mail'
+    ldap_search_base: 'ou=users,dc=example,dc=com'
+    ldap_search_attribute: 'uid=%U'
+    ldap_search_filter: '(objectClass=*)'
+    ldap_group: 'cn=baikal,ou=groups,dc=example,dc=com'
 database:
     encryption_key: 5d3f0fa0192e3058ea70f1bb20924add
     backend: 'mysql'

@@ -62,6 +62,7 @@ class Initialize extends \Flake\Core\Controller {
 
         $this->oForm = $this->oModel->formForThisModelInstance([
             "close" => false,
+            "hook.morphology" => [new \BaikalAdmin\Controller\Settings\Standard(), "morphologyHook"],
         ]);
 
         if ($this->oForm->submitted()) {

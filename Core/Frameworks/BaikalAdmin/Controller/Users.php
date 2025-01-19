@@ -71,6 +71,7 @@ class Users extends \Flake\Core\Controller {
                 "username"         => $user->get("username"),
                 "displayname"      => $user->get("displayname"),
                 "email"            => $user->get("email"),
+                "federation"       => $user->get("federation"),
             ];
         }
 
@@ -120,10 +121,12 @@ class Users extends \Flake\Core\Controller {
     protected function actionEdit() {
         $aParams = $this->getParams();
         $this->oModel = new \Baikal\Model\User(intval($aParams["edit"]));
-        $this->initForm();
+        if ($this->oModel->isEditable()) {
+            $this->initForm();
 
-        if ($this->oForm->submitted()) {
-            $this->oForm->execute();
+            if ($this->oForm->submitted()) {
+                $this->oForm->execute();
+            }
         }
     }
 
@@ -217,6 +220,10 @@ class Users extends \Flake\Core\Controller {
     }
 
     static function linkEdit(\Baikal\Model\User $user) {
+        if (!$user->isEditable()) {
+            return null;
+        }
+
         return self::buildRoute([
             "edit" => $user->get("id"),
         ]) . "#form";

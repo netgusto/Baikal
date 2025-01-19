@@ -10,6 +10,9 @@
 	<tr>
 		<td class="col-username">
 			<i class="{{ usericon }}"></i> <strong>{{ user.username|escape }}</strong><br />
+			{% if user.federation %}
+			<font color="red">{{ user.federation }}</font>
+			{% endif %}
 			{{ user.displayname|escape }} <a href="{{ user.mailtouri|escape }}">&lt;{{ user.email|escape }}&gt;</a>
 		</td>
 		<td class="col-actions no-border-left">
@@ -17,7 +20,9 @@
 				<nobr><span class="btn popover-hover" data-placement="bottom" data-toggle="popover" title="Setup info" data-content="<b>URI</b><br/><span class='copy-to-clipboard' onclick='copyToClipboard(this);'>{{ davUri }}<i class='icon-file'></i></span><br><br><b>User name</b><br/><span class='copy-to-clipboard' onclick='copyToClipboard(this);'>{{ user.username|escape }}<i class='icon-file'></i></span><br><br><b>Password</b><br/><em>(hidden)</em>" data-html="true"><i class="icon-info-sign"></i></span></nobr>
 				<nobr><a class="btn" href="{{ user.linkcalendars }}"><i class="{{ calendaricon }}"></i> Calendars</a></nobr>
 				<nobr><a class="btn" href="{{ user.linkaddressbooks }}"><i class="icon-book"></i> Address Books</a></nobr>
+				{% if user.linkedit %}
 				<nobr><a class="btn btn-primary" href="{{ user.linkedit }}"><i class="icon-edit icon-white"></i>  Edit</a></nobr>
+				{% endif %}
 				<nobr><a class="btn btn-danger" href="{{ user.linkdelete }}"><i class="icon-remove icon-white"></i> Delete</a></nobr>
 			</p>
 		</td>

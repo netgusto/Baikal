@@ -25,11 +25,12 @@
 #  This copyright notice MUST APPEAR in all copies of the script!
 #################################################################
 
-namespace Baikal\Model;
+namespace Baikal\Model\Principal;
 
-class Principal extends \Flake\Core\Model\Db {
+class DBPrincipal extends \Flake\Core\Model\Db {
     const DATATABLE = "principals";
     const PRIMARYKEY = "id";
+    public const EDITABLE = true;
     protected $aData = [
         "uri"         => "",
         "displayname" => "",
