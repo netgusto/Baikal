@@ -156,7 +156,11 @@ class Server {
         $this->server->setBaseUri($this->baseUri);
 
         $this->server->addPlugin(new \Sabre\DAV\Auth\Plugin($authBackend, $this->authRealm));
-        $this->server->addPlugin(new \Sabre\DAVACL\Plugin());
+
+        $DAVACL = new \Sabre\DAVACL\Plugin();
+        $DAVACL->allowUnauthenticatedAccess = false;
+        $this->server->addPlugin($DAVACL);
+
         $this->server->addPlugin(new \Sabre\DAV\Browser\Plugin());
 
         $this->server->addPlugin(new \Sabre\DAV\PropertyStorage\Plugin(
